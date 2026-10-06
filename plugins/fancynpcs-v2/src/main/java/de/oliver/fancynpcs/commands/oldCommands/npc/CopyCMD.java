@@ -69,7 +69,7 @@ public enum CopyCMD {
                         npc.getData().isMirrorSkin()
                 ));
         // Calling the event and creating + registering copied NPC if not cancelled.
-        if (new NpcCreateEvent(copied, sender).callEvent()) {
+        if (new NpcCreateEvent(copied, sender, npc).callEvent()) {
             copied.create();
             FancyNpcs.getInstance().getNpcManagerImpl().registerNpc(copied);
             copied.spawnForAll();

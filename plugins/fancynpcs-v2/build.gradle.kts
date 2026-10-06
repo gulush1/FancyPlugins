@@ -63,6 +63,9 @@ dependencies {
     implementation("org.mineskin:java-client-jsoup:3.2.6")
 
     compileOnly("me.clip:placeholderapi:2.12.2")
+    compileOnly("io.github.toxicity188:bettermodel-bukkit-api:3.5.0")
+    compileOnly(files("libs/DecentHolograms-2.10.1.jar"))
+    compileOnly("io.netty:netty-transport:4.1.118.Final")
     compileOnly("com.intellectualsites.plotsquared:plotsquared-core:7.6.0")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.5")
     compileOnly("net.citizensnpcs:citizens-main:2.0.42-SNAPSHOT") {
@@ -95,6 +98,16 @@ paper {
         register("Citizens") {
             required = false
             load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+        }
+        register("BetterModel") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
+        }
+        register("DecentHolograms") {
+            required = false
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            joinClasspath = true
         }
     }
 }
@@ -208,5 +221,5 @@ val gitCommitMessage: Provider<String> = providers.exec {
 }.standardOutput.asText.map { it.trim() }
 
 fun getFNVersion(): String {
-    return file("VERSION").readText()
+    return file("VERSION").readText().trim() + "-gul." + file("GUL_VERSION").readText().trim()
 }

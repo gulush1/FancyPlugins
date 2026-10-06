@@ -71,7 +71,7 @@ public final class CopyCMD extends FancyContext {
                         npc.getData().isMirrorSkin()
                 ));
         // Calling the event and creating + registering copied NPC if not cancelled.
-        if (new NpcCreateEvent(copied, sender).callEvent()) {
+        if (new NpcCreateEvent(copied, sender, npc).callEvent()) {
             copied.create();
             plugin.getNpcManagerImpl().registerNpc(copied);
             copied.spawnForAll();

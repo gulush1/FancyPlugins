@@ -15,6 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -219,6 +220,11 @@ public abstract class Npc {
     protected abstract void refreshEntityData(Player serverPlayer);
 
     public abstract int getEntityId();
+
+    /**
+     * @return the Bukkit view of the entity backing this NPC, or null if the NPC has not been created yet
+     */
+    public abstract @Nullable org.bukkit.entity.Entity getBukkitEntity();
 
     public NpcData getData() {
         return data;

@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Is fired when a new NPC is being created
@@ -18,11 +19,18 @@ public class NpcCreateEvent extends Event implements Cancellable {
     private final Npc npc;
     @NotNull
     private final CommandSender creator;
+    @Nullable
+    private final Npc source;
     private boolean isCancelled;
 
     public NpcCreateEvent(@NotNull Npc npc, @NotNull CommandSender creator) {
+        this(npc, creator, null);
+    }
+
+    public NpcCreateEvent(@NotNull Npc npc, @NotNull CommandSender creator, @Nullable Npc source) {
         this.npc = npc;
         this.creator = creator;
+        this.source = source;
     }
 
     public static HandlerList getHandlerList() {
@@ -41,6 +49,13 @@ public class NpcCreateEvent extends Event implements Cancellable {
      */
     public @NotNull CommandSender getCreator() {
         return creator;
+    }
+
+    /**
+     * @return the NPC this one was copied from, or null if it was created from scratch
+     */
+    public @Nullable Npc getSource() {
+        return source;
     }
 
     @Override

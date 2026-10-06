@@ -43,6 +43,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Nullable;
 import org.lushplugins.chatcolorhandler.paper.PaperColor;
 
 import java.util.*;
@@ -444,6 +445,11 @@ public class Npc_1_21_5 extends Npc {
     @Override
     public int getEntityId() {
         return npc.getId();
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Entity getBukkitEntity() {
+        return npc == null ? null : npc.getBukkitEntity();
     }
 
     public Entity getNpc() {
