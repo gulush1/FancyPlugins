@@ -21,6 +21,7 @@ allprojects {
         maven(url = "https://repo.extendedclip.com/releases/") // for PlaceholderAPI
         maven(url = "https://maven.enginehub.org/repo/") // for WorldEdit
         maven(url = "https://maven.citizensnpcs.co/repo") // for Citizens
+        maven(url = "https://jitpack.io") { content { includeGroupAndSubgroups("com.github.decentsoftware-eu") } } // for DecentHolograms
     }
 }
 
@@ -64,7 +65,9 @@ dependencies {
 
     compileOnly("me.clip:placeholderapi:2.12.2")
     compileOnly("io.github.toxicity188:bettermodel-bukkit-api:3.5.0")
-    compileOnly(files("libs/DecentHolograms-2.10.1.jar"))
+    compileOnly("com.github.decentsoftware-eu.decentholograms:decentholograms:2.10.1")
+    compileOnly("com.github.decentsoftware-eu.decentholograms:platform-api:2.10.1")
+    compileOnly("org.spongepowered:configurate-yaml:4.2.0")
     compileOnly("io.netty:netty-transport:4.1.118.Final")
     compileOnly("com.intellectualsites.plotsquared:plotsquared-core:7.6.0")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.5")

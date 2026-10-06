@@ -1,7 +1,6 @@
 package de.oliver.fancynpcs.integrations.resourcepack;
 
 import de.oliver.fancynpcs.integrations.IntegrationsManager;
-import de.oliver.fancynpcs.integrations.resourcepack.ResourcePackService;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 

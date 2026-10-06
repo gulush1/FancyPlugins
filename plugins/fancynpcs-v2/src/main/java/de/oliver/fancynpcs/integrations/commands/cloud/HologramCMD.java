@@ -34,13 +34,14 @@ public class HologramCMD extends IntegrationContext {
         if (!isAvailable(service, sender)) return;
 
         if (service.getEntry(npc) != null) {
-            translator.translate("npc_hologram_already_exists")
-                    .withPrefix()
-                    .replace("npc", npc.getData().getName())
-                    .send(sender);
+            sendAlreadyExists(npc, sender);
             return;
         }
 
+        createHologram(service, npc, text, offset, sender);
+    }
+
+    private void createHologram(final NpcHologramService service, final Npc npc, final String text, final double offset, final CommandSender sender) {
         List<String> lines = new ArrayList<>();
         lines.add(text);
         NpcHologramEntry entry = service.getFactory().create(npc, lines, offset);
@@ -52,6 +53,13 @@ public class HologramCMD extends IntegrationContext {
                 .withPrefix()
                 .replace("npc", npc.getData().getName())
                 .replace("offset", String.valueOf(offset))
+                .send(sender);
+    }
+
+    private void sendAlreadyExists(final Npc npc, final CommandSender sender) {
+        translator.translate("npc_hologram_already_exists")
+                .withPrefix()
+                .replace("npc", npc.getData().getName())
                 .send(sender);
     }
 
@@ -127,6 +135,10 @@ public class HologramCMD extends IntegrationContext {
         if (!isValidLine(lines, line, npc, sender)) return;
 
         lines.remove(line - 1);
+        applyLineRemoval(service, entry, lines, npc, line, sender);
+    }
+
+    private void applyLineRemoval(final NpcHologramService service, final NpcHologramEntry entry, final List<String> lines, final Npc npc, final int line, final CommandSender sender) {
         if (lines.isEmpty()) {
             service.remove(npc);
             sendRemoved(npc, sender);

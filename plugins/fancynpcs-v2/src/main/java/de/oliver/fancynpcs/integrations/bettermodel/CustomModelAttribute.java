@@ -34,6 +34,10 @@ import java.util.UUID;
 public class CustomModelAttribute {
 
     public static final String ATTRIBUTE_NAME = "custom_model";
+
+    /** Command argument value that removes the custom model from an NPC. */
+    public static final String REMOVE_MODEL_VALUE = "@none";
+
     private static final UUID FALLBACK_SENTINEL = new UUID(0L, 0L);
     private static final float MODEL_PITCH = 0f;
 
@@ -67,8 +71,8 @@ public class CustomModelAttribute {
         // Close all existing trackers
         closeAllTrackers(bukkitEntity);
 
-        // remove model if model name is "@none"
-        if (modelName.equalsIgnoreCase("@none")) {
+        // remove model if model name is REMOVE_MODEL_VALUE
+        if (modelName.equalsIgnoreCase(REMOVE_MODEL_VALUE)) {
             return;
         }
 
@@ -130,7 +134,7 @@ public class CustomModelAttribute {
      * @return whether the entity already has a living tracker for exactly this model
      */
     private static boolean isModelApplied(Entity bukkitEntity, String modelName) {
-        if (modelName.equalsIgnoreCase("@none")) {
+        if (modelName.equalsIgnoreCase(REMOVE_MODEL_VALUE)) {
             return false;
         }
 

@@ -2,6 +2,13 @@ package de.oliver.fancynpcs.integrations;
 
 import com.fancyinnovations.config.Config;
 import com.fancyinnovations.config.ConfigField;
+import de.oliver.fancynpcs.integrations.hover.EasingCurve;
+
+import java.io.File;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Configuration of the built-in BetterModel and DecentHolograms integrations (integrations.yml).
@@ -26,13 +33,34 @@ public class IntegrationsConfig {
     public static final String MODEL_FALLBACK_REMEMBER_VERIFIED_DAYS_PATH = "model_fallback.native.remember_verified_days";
     public static final String MODEL_FALLBACK_PLACEHOLDER_REFRESH_SECONDS_PATH = "model_fallback.placeholder_refresh_seconds";
 
-    private static final String CONFIG_FILE_PATH = "plugins/FancyNpcs/integrations.yml";
+    public static final String HOVER_SCALE_ENABLED_PATH = "hover_scale.enabled";
+    public static final String HOVER_SCALE_FACTOR_PATH = "hover_scale.factor";
+    public static final String HOVER_SCALE_DURATION_TICKS_PATH = "hover_scale.duration_ticks";
+    public static final String HOVER_SCALE_MAX_DISTANCE_PATH = "hover_scale.max_distance";
+    public static final String HOVER_SCALE_GROW_CURVE_PATH = "hover_scale.grow_curve";
+    public static final String HOVER_SCALE_SHRINK_CURVE_PATH = "hover_scale.shrink_curve";
+
+    private static final double DEFAULT_HOVER_SCALE_FACTOR = 1.15;
+    private static final int DEFAULT_HOVER_SCALE_DURATION_TICKS = 6;
+    private static final double DEFAULT_HOVER_SCALE_MAX_DISTANCE = 6.0;
+    private static final EasingCurve DEFAULT_HOVER_SCALE_CURVE = EasingCurve.EASE_OUT_CUBIC;
+
+    private static final String CONFIG_FILE_NAME = "integrations.yml";
+
+    private final Set<String> warnedCurves = ConcurrentHashMap.newKeySet();
 
     private Config config;
 
     public void init() {
-        config = new Config(IntegrationsManager.get().getLogger(), CONFIG_FILE_PATH);
+        IntegrationsManager manager = IntegrationsManager.get();
+        String path = new File(manager.getPlugin().getDataFolder(), CONFIG_FILE_NAME).getPath();
+        config = new Config(manager.getLogger(), path);
+        addHologramFields();
+        addModelFallbackFields();
+        addHoverFields();
+    }
 
+    private void addHologramFields() {
         config.addField(new ConfigField<>(
                 HOLOGRAM_DEFAULT_Y_OFFSET_PATH,
                 "Default Y offset of new NPC holograms, measured from the top of the NPC "
@@ -63,6 +91,9 @@ public class IntegrationsConfig {
                 String.class
         ));
 
+    }
+
+    private void addModelFallbackFields() {
         config.addField(new ConfigField<>(
                 MODEL_FALLBACK_ENABLED_PATH,
                 "Whether to hide custom models from players without the resource pack (they will see the vanilla NPC instead).",
@@ -191,7 +222,64 @@ public class IntegrationsConfig {
 
     }
 
+    private void addHoverFields() {
+        config.addField(new ConfigField<>(
+                HOVER_SCALE_ENABLED_PATH,
+                "Whether NPCs smoothly grow for the player that aims at them (per-player; NPCs with a custom model are skipped).",
+                false,
+                true,
+                false,
+                Boolean.class
+        ));
+
+        config.addField(new ConfigField<>(
+                HOVER_SCALE_FACTOR_PATH,
+                "Scale multiplier while an NPC is aimed at. Per-NPC override: /npc attribute <npc> set hover_scale <factor|off>.",
+                false,
+                DEFAULT_HOVER_SCALE_FACTOR,
+                false,
+                Double.class
+        ));
+
+        config.addField(new ConfigField<>(
+                HOVER_SCALE_DURATION_TICKS_PATH,
+                "Length of the grow/shrink animation in ticks.",
+                false,
+                DEFAULT_HOVER_SCALE_DURATION_TICKS,
+                false,
+                Integer.class
+        ));
+
+        config.addField(new ConfigField<>(
+                HOVER_SCALE_MAX_DISTANCE_PATH,
+                "Maximum distance in blocks at which aiming at an NPC counts.",
+                false,
+                DEFAULT_HOVER_SCALE_MAX_DISTANCE,
+                false,
+                Double.class
+        ));
+
+        config.addField(new ConfigField<>(
+                HOVER_SCALE_GROW_CURVE_PATH,
+                "Easing curve while an NPC grows: linear, ease_in/out/in_out_{sine,quad,cubic,quart,expo,back}, ease_out_elastic, ease_out_bounce. Per-NPC override: /npc attribute <npc> set hover_curve <curve>.",
+                false,
+                "ease_out_cubic",
+                false,
+                String.class
+        ));
+
+        config.addField(new ConfigField<>(
+                HOVER_SCALE_SHRINK_CURVE_PATH,
+                "Easing curve while an NPC shrinks back.",
+                false,
+                "ease_out_cubic",
+                false,
+                String.class
+        ));
+    }
+
     public void reload() {
+        warnedCurves.clear();
         config.reload();
     }
 
@@ -265,6 +353,48 @@ public class IntegrationsConfig {
 
     public int getModelFallbackPlaceholderRefreshSeconds() {
         return config.get(MODEL_FALLBACK_PLACEHOLDER_REFRESH_SECONDS_PATH);
+    }
+
+    public boolean isHoverScaleEnabled() {
+        return config.get(HOVER_SCALE_ENABLED_PATH);
+    }
+
+    public double getHoverScaleFactor() {
+        double factor = config.get(HOVER_SCALE_FACTOR_PATH);
+        return factor > 0 ? factor : DEFAULT_HOVER_SCALE_FACTOR;
+    }
+
+    public int getHoverScaleDurationTicks() {
+        int ticks = config.get(HOVER_SCALE_DURATION_TICKS_PATH);
+        return ticks >= 1 ? ticks : DEFAULT_HOVER_SCALE_DURATION_TICKS;
+    }
+
+    public double getHoverScaleMaxDistance() {
+        double distance = config.get(HOVER_SCALE_MAX_DISTANCE_PATH);
+        return distance > 0 ? distance : DEFAULT_HOVER_SCALE_MAX_DISTANCE;
+    }
+
+    public EasingCurve getHoverScaleGrowCurve() {
+        return resolveCurve(HOVER_SCALE_GROW_CURVE_PATH);
+    }
+
+    public EasingCurve getHoverScaleShrinkCurve() {
+        return resolveCurve(HOVER_SCALE_SHRINK_CURVE_PATH);
+    }
+
+    private EasingCurve resolveCurve(String path) {
+        String raw = config.get(path);
+        Optional<EasingCurve> curve = EasingCurve.byName(raw);
+        if (curve.isEmpty()) {
+            warnInvalidCurveOnce(path, raw);
+        }
+        return curve.orElse(DEFAULT_HOVER_SCALE_CURVE);
+    }
+
+    private void warnInvalidCurveOnce(String path, String raw) {
+        if (warnedCurves.add(path + "=" + raw)) {
+            IntegrationsManager.get().getLogger().warn("Unknown easing curve '" + raw + "' in " + path + ", using " + DEFAULT_HOVER_SCALE_CURVE.name().toLowerCase(Locale.ROOT));
+        }
     }
 
 }

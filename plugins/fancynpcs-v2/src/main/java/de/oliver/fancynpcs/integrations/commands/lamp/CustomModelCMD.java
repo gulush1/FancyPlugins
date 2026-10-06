@@ -34,17 +34,8 @@ public final class CustomModelCMD extends IntegrationContext {
             final @NotNull @SuggestWith(ModelSuggestion.class) String model
     ) {
         final CommandSender sender = actor.sender();
-        NpcAttribute customModelAttribute = FancyNpcsPlugin.get().getAttributeManager().getAttributeByName(npc.getData().getType(), CustomModelAttribute.ATTRIBUTE_NAME);
-
-        if (model.equalsIgnoreCase("@none")) {
-            npc.getData().removeAttribute(customModelAttribute);
-            CustomModelAttribute.closeAllTrackers(npc);
-            npc.updateForAll();
-
-            translator.translate("npc_custom_model_removed")
-                    .withPrefix()
-                    .replace("npc", npc.getData().getName())
-                    .send(sender);
+        if (model.equalsIgnoreCase(CustomModelAttribute.REMOVE_MODEL_VALUE)) {
+            removeModel(npc, sender);
             return;
         }
 
@@ -57,7 +48,22 @@ public final class CustomModelCMD extends IntegrationContext {
             return;
         }
 
-        npc.getData().addAttribute(customModelAttribute, model);
+        applyModel(npc, model, sender);
+    }
+
+    private void removeModel(final Npc npc, final CommandSender sender) {
+        npc.getData().removeAttribute(customModelAttributeOf(npc));
+        CustomModelAttribute.closeAllTrackers(npc);
+        npc.updateForAll();
+
+        translator.translate("npc_custom_model_removed")
+                .withPrefix()
+                .replace("npc", npc.getData().getName())
+                .send(sender);
+    }
+
+    private void applyModel(final Npc npc, final String model, final CommandSender sender) {
+        npc.getData().addAttribute(customModelAttributeOf(npc), model);
         npc.updateForAll();
 
         translator.translate("npc_custom_model_applied")
@@ -67,12 +73,17 @@ public final class CustomModelCMD extends IntegrationContext {
                 .send(sender);
     }
 
+    private NpcAttribute customModelAttributeOf(final Npc npc) {
+        return FancyNpcsPlugin.get().getAttributeManager().getAttributeByName(npc.getData().getType(), CustomModelAttribute.ATTRIBUTE_NAME);
+    }
+
     private static final class ModelSuggestion implements SuggestionProvider<BukkitCommandActor> {
 
         @Override
         public @NotNull Collection<String> getSuggestions(@NotNull ExecutionContext<BukkitCommandActor> context) {
-            List<String> result = new ArrayList<>(BetterModel.modelKeys());
-            result.add("@none");
+            List<String> result = new ArrayList<>();
+            result.add(CustomModelAttribute.REMOVE_MODEL_VALUE);
+            result.addAll(BetterModel.modelKeys());
             return result;
         }
     }

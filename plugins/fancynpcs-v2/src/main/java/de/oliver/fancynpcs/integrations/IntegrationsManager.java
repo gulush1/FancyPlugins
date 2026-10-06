@@ -17,6 +17,9 @@ import de.oliver.fancynpcs.integrations.hologram.NpcHologramListener;
 import de.oliver.fancynpcs.integrations.hologram.NpcHologramService;
 import de.oliver.fancynpcs.integrations.hologram.NpcHologramStorage;
 import de.oliver.fancynpcs.integrations.hologram.dh.DhHologramCodec;
+import de.oliver.fancynpcs.integrations.hover.EasingCurve;
+import de.oliver.fancynpcs.integrations.hover.HoverScaleListener;
+import de.oliver.fancynpcs.integrations.hover.HoverScaleTracker;
 import de.oliver.fancynpcs.integrations.resourcepack.ResourcePackService;
 import de.oliver.fancynpcs.integrations.resourcepack.ResourcePackStatusListener;
 import org.bukkit.Bukkit;
@@ -42,6 +45,7 @@ public final class IntegrationsManager {
     private IntegrationsConfig config;
     private NpcHologramService hologramService;
     private ResourcePackService resourcePackService;
+    private HoverScaleTracker hoverScaleTracker;
     private boolean legacyAddonPresent;
     private boolean modelSupportEnabled;
     private boolean hologramSupportEnabled;
@@ -50,6 +54,10 @@ public final class IntegrationsManager {
         this.plugin = plugin;
     }
 
+    /**
+     * Returns the manager owned by FancyNpcs. It is non-null from the moment FancyNpcs#onEnable constructs it
+     * (before {@link #load()}); callers must not use it earlier.
+     */
     public static IntegrationsManager get() {
         return FancyNpcs.getInstance().getIntegrations();
     }
@@ -62,29 +70,37 @@ public final class IntegrationsManager {
         }
 
         new LegacyAddonMigrator(plugin.getDataFolder(), getLogger()).migrate();
-
         config = new IntegrationsConfig();
         config.init();
         config.reload();
+        detectIntegrations();
+        setUpServices();
+        registerHooks();
+    }
 
+    private void detectIntegrations() {
         modelSupportEnabled = Bukkit.getPluginManager().isPluginEnabled(BETTER_MODEL_PLUGIN_NAME);
         if (!modelSupportEnabled) {
             warnAboutMissingBetterModel();
         }
-
         hologramSupportEnabled = Bukkit.getPluginManager().isPluginEnabled(DECENT_HOLOGRAMS_PLUGIN_NAME);
+    }
+
+    private void setUpServices() {
         if (hologramSupportEnabled) {
             setUpHologramService();
         }
-
         if (modelSupportEnabled) {
             resourcePackService = new ResourcePackService(plugin);
             resourcePackService.enable();
         }
+    }
 
+    private void registerHooks() {
         plugin.getAttributeManager().registerAttribute(createModelAttribute());
         registerActions();
         registerListeners();
+        setUpHoverScale();
     }
 
     public void registerCommands(boolean lamp) {
@@ -107,6 +123,7 @@ public final class IntegrationsManager {
             return;
         }
         config.reload();
+        restartHoverScale();
         if (resourcePackService != null) {
             resourcePackService.reload();
         }
@@ -116,6 +133,9 @@ public final class IntegrationsManager {
     }
 
     public void disable() {
+        if (hoverScaleTracker != null) {
+            hoverScaleTracker.stop();
+        }
         if (resourcePackService != null) {
             resourcePackService.disable();
             resourcePackService = null;
@@ -160,6 +180,10 @@ public final class IntegrationsManager {
         return resourcePackService;
     }
 
+    public @Nullable HoverScaleTracker getHoverScaleTracker() {
+        return hoverScaleTracker;
+    }
+
     private void registerModelCommands(boolean lamp) {
         registerCommand(lamp,
                 () -> de.oliver.fancynpcs.integrations.commands.lamp.CustomModelCMD.INSTANCE,
@@ -200,6 +224,29 @@ public final class IntegrationsManager {
                 (npc, value) -> {
                 }
         );
+    }
+
+    private void setUpHoverScale() {
+        List<EntityType> livingTypes = Arrays.stream(EntityType.values()).filter(EntityType::isAlive).toList();
+        plugin.getAttributeManager().registerAttribute(new NpcAttribute(
+                HoverScaleTracker.ATTRIBUTE_NAME, List::of, livingTypes, (npc, value) -> {
+                }));
+        plugin.getAttributeManager().registerAttribute(new NpcAttribute(
+                HoverScaleTracker.CURVE_ATTRIBUTE_NAME, EasingCurve::names, livingTypes, (npc, value) -> {
+                }));
+        hoverScaleTracker = new HoverScaleTracker(plugin, config);
+        registerListener(new HoverScaleListener(hoverScaleTracker));
+        restartHoverScale();
+    }
+
+    private void restartHoverScale() {
+        if (hoverScaleTracker == null) {
+            return;
+        }
+        hoverScaleTracker.stop();
+        if (config.isHoverScaleEnabled()) {
+            hoverScaleTracker.start();
+        }
     }
 
     private void setUpHologramService() {

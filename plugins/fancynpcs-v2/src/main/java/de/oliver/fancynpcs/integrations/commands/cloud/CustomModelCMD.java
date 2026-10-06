@@ -32,17 +32,8 @@ public class CustomModelCMD extends IntegrationContext {
             final @NotNull Npc npc,
             final @NotNull @Argument(suggestions = "integrations/custom_model") String model
     ) {
-        NpcAttribute customModelAttribute = FancyNpcsPlugin.get().getAttributeManager().getAttributeByName(npc.getData().getType(), CustomModelAttribute.ATTRIBUTE_NAME);
-
-        if (model.equalsIgnoreCase("@none")) {
-            npc.getData().removeAttribute(customModelAttribute);
-            CustomModelAttribute.closeAllTrackers(npc);
-            npc.updateForAll();
-
-            translator.translate("npc_custom_model_removed")
-                    .withPrefix()
-                    .replace("npc", npc.getData().getName())
-                    .send(sender);
+        if (model.equalsIgnoreCase(CustomModelAttribute.REMOVE_MODEL_VALUE)) {
+            removeModel(npc, sender);
             return;
         }
 
@@ -55,8 +46,22 @@ public class CustomModelCMD extends IntegrationContext {
             return;
         }
 
+        applyModel(npc, model, sender);
+    }
 
-        npc.getData().addAttribute(customModelAttribute, model);
+    private void removeModel(final Npc npc, final CommandSender sender) {
+        npc.getData().removeAttribute(customModelAttributeOf(npc));
+        CustomModelAttribute.closeAllTrackers(npc);
+        npc.updateForAll();
+
+        translator.translate("npc_custom_model_removed")
+                .withPrefix()
+                .replace("npc", npc.getData().getName())
+                .send(sender);
+    }
+
+    private void applyModel(final Npc npc, final String model, final CommandSender sender) {
+        npc.getData().addAttribute(customModelAttributeOf(npc), model);
         npc.updateForAll();
 
         translator.translate("npc_custom_model_applied")
@@ -66,11 +71,15 @@ public class CustomModelCMD extends IntegrationContext {
                 .send(sender);
     }
 
+    private NpcAttribute customModelAttributeOf(final Npc npc) {
+        return FancyNpcsPlugin.get().getAttributeManager().getAttributeByName(npc.getData().getType(), CustomModelAttribute.ATTRIBUTE_NAME);
+    }
+
     @Suggestions("integrations/custom_model")
     public List<String> suggestModels(final CommandContext<CommandSender> context, final CommandInput input) {
-        return new ArrayList<>() {{
-            add("@none");
-            addAll(BetterModel.modelKeys());
-        }};
+        List<String> result = new ArrayList<>();
+        result.add(CustomModelAttribute.REMOVE_MODEL_VALUE);
+        result.addAll(BetterModel.modelKeys());
+        return result;
     }
 }

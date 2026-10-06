@@ -42,18 +42,17 @@ public class PlayAnimationCMD extends IntegrationContext {
         }
 
         EntityTracker tracker = CustomModelAttribute.getEntityTracker(npc);
-
         AnimationModifier modifier = loop ? AnimationModifier.DEFAULT : AnimationModifier.DEFAULT_WITH_PLAY_ONCE;
-        if (!tracker.animate(animation, modifier)) {
-            translator.translate("npc_play_animation_failed")
-                    .withPrefix()
-                    .replace("npc", npc.getData().getName())
-                    .replace("animation", animation)
-                    .send(sender);
+        if (tracker == null || !tracker.animate(animation, modifier)) {
+            sendResult("npc_play_animation_failed", npc, animation, sender);
             return;
         }
 
-        translator.translate("npc_play_animation_success")
+        sendResult("npc_play_animation_success", npc, animation, sender);
+    }
+
+    private void sendResult(final String key, final Npc npc, final String animation, final CommandSender sender) {
+        translator.translate(key)
                 .withPrefix()
                 .replace("npc", npc.getData().getName())
                 .replace("animation", animation)
@@ -62,7 +61,10 @@ public class PlayAnimationCMD extends IntegrationContext {
 
     @Suggestions("integrations/play_animation")
     public List<String> suggestAnimations(final CommandContext<CommandSender> context, final CommandInput input) {
-        EntityTracker tracker = CustomModelAttribute.getEntityTracker(context.get("npc"));
+        Npc npc = context.<Npc>optional("npc").orElse(null);
+        if (npc == null) return new ArrayList<>();
+
+        EntityTracker tracker = CustomModelAttribute.getEntityTracker(npc);
         if (tracker == null) return new ArrayList<>();
 
         return tracker.renderer().animations().keySet().stream().toList();

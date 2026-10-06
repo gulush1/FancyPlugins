@@ -1,6 +1,5 @@
 package de.oliver.fancynpcs.integrations.resourcepack;
 
-import de.oliver.fancynpcs.integrations.resourcepack.ResourcePackService;
 import de.oliver.fancynpcs.integrations.resourcepack.state.PackSessionRegistry;
 import de.oliver.fancynpcs.integrations.resourcepack.state.PackStatus;
 import de.oliver.fancynpcs.api.events.NpcSpawnEvent;

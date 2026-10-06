@@ -25,13 +25,14 @@ public class NpcCopyListener implements Listener {
         }
 
         String sourceName = source.getData().getName();
-        Npc copy = event.getNpc();
+        String copyId = event.getNpc().getData().getId();
         Bukkit.getGlobalRegionScheduler().runDelayed(IntegrationsManager.get().getPlugin(),
-                task -> copyHologram(sourceName, copy), COPY_DELAY_TICKS);
+                task -> copyHologram(sourceName, copyId), COPY_DELAY_TICKS);
     }
 
-    private void copyHologram(String sourceName, Npc copy) {
-        if (FancyNpcsPlugin.get().getNpcManager().getNpcById(copy.getData().getId()) == null) {
+    private void copyHologram(String sourceName, String copyId) {
+        Npc copy = FancyNpcsPlugin.get().getNpcManager().getNpcById(copyId);
+        if (copy == null) {
             return;
         }
 

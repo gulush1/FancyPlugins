@@ -8,8 +8,8 @@ import kr.toxicity.model.api.tracker.EntityTracker;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import revxrsal.commands.annotation.Command;
-import revxrsal.commands.annotation.Flag;
 import revxrsal.commands.annotation.SuggestWith;
+import revxrsal.commands.annotation.Switch;
 import revxrsal.commands.autocomplete.SuggestionProvider;
 import revxrsal.commands.bukkit.actor.BukkitCommandActor;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
@@ -31,7 +31,7 @@ public final class PlayAnimationCMD extends IntegrationContext {
             final BukkitCommandActor actor,
             final @NotNull Npc npc,
             final @NotNull @SuggestWith(AnimationSuggestion.class) String animation,
-            final @Flag("loop") boolean loop
+            final @Switch("loop") boolean loop
     ) {
         final CommandSender sender = actor.sender();
         if (!CustomModelAttribute.hasAttribute(npc)) {
@@ -43,18 +43,17 @@ public final class PlayAnimationCMD extends IntegrationContext {
         }
 
         EntityTracker tracker = CustomModelAttribute.getEntityTracker(npc);
-
         AnimationModifier modifier = loop ? AnimationModifier.DEFAULT : AnimationModifier.DEFAULT_WITH_PLAY_ONCE;
-        if (!tracker.animate(animation, modifier)) {
-            translator.translate("npc_play_animation_failed")
-                    .withPrefix()
-                    .replace("npc", npc.getData().getName())
-                    .replace("animation", animation)
-                    .send(sender);
+        if (tracker == null || !tracker.animate(animation, modifier)) {
+            sendResult("npc_play_animation_failed", npc, animation, sender);
             return;
         }
 
-        translator.translate("npc_play_animation_success")
+        sendResult("npc_play_animation_success", npc, animation, sender);
+    }
+
+    private void sendResult(final String key, final Npc npc, final String animation, final CommandSender sender) {
+        translator.translate(key)
                 .withPrefix()
                 .replace("npc", npc.getData().getName())
                 .replace("animation", animation)
