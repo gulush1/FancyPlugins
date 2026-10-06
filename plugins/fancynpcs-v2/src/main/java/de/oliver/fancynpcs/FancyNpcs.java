@@ -53,6 +53,7 @@ import de.oliver.fancynpcs.v26_1_1.Npc_26_1_1;
 import de.oliver.fancynpcs.v26_2.Npc_26_2;
 import de.oliver.fancynpcs.v26_3.Npc_26_3;
 import de.oliver.fancynpcs.v26_4.Npc_26_4;
+import de.oliver.fancynpcs.integrations.IntegrationsManager;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.EntityType;
@@ -98,6 +99,7 @@ public class FancyNpcs extends JavaPlugin implements FancyNpcsPlugin {
     private AttributeManagerImpl attributeManager;
     private SkinManagerImpl skinManager;
     private ActionManagerImpl actionManager;
+    private IntegrationsManager integrations;
     private VisibilityTracker visibilityTracker;
     private boolean usingPlotSquared;
 
@@ -215,6 +217,8 @@ public class FancyNpcs extends JavaPlugin implements FancyNpcsPlugin {
         actionManager.registerAction(new NeedPermissionAction());
         actionManager.registerAction(new NeedItemAction());
         actionManager.registerAction(new PlaySoundAction());
+        integrations = new IntegrationsManager(this);
+        integrations.load();
 
         skinManager = new SkinManagerImpl(new UUIDFileCache(), new SkinCacheFile(), new SkinCacheMemory(), MojangQueue.get(), MineSkinQueue.get());
         OldSkinCacheMigrator.migrate();
@@ -331,12 +335,14 @@ public class FancyNpcs extends JavaPlugin implements FancyNpcsPlugin {
         if (config.isRegisterCommands()) {
             if (USE_LAMP_COMMANDS_FEATURE_FLAG.isEnabled()) {
                 lampCommandManager = new LampCommandManager(this);
+                integrations.registerCommands(true);
                 fancyLogger.info("Lamp commands have been registered.");
             } else {
                 cloudCommandManager = new CloudCommandManager(this, false)
                         .registerArguments()
                         .registerExceptionHandlers()
                         .registerCommands();
+                integrations.registerCommands(false);
                 fancyLogger.info("Cloud commands have been registered.");
             }
         } else {
@@ -352,6 +358,9 @@ public class FancyNpcs extends JavaPlugin implements FancyNpcsPlugin {
 
     @Override
     public void onDisable() {
+        if (integrations != null) {
+            integrations.disable();
+        }
         getServer().getMessenger().unregisterOutgoingPluginChannel(this);
         if (npcManager != null) {
             npcManager.saveNpcs(true);
@@ -562,6 +571,10 @@ public class FancyNpcs extends JavaPlugin implements FancyNpcsPlugin {
 
     public SkinManagerImpl getSkinManagerImpl() {
         return skinManager;
+    }
+
+    public IntegrationsManager getIntegrations() {
+        return integrations;
     }
 
     @Override

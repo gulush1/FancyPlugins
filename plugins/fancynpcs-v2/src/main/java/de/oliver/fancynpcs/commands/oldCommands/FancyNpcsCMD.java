@@ -39,6 +39,7 @@ public final class FancyNpcsCMD {
         translator.setSelectedLanguage(selectedLanguage);
         // Reloading all NPCs.
         // NOTE: This sometimes creates duplicated NPCs on the client-side.
+        plugin.getIntegrations().reload();
         plugin.getNpcManagerImpl().reloadNpcs();
         // Sending success message to the sender.
         translator.translate("fancynpcs_reload_success").withPrefix().send(sender);
